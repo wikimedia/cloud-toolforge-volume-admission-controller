@@ -1,0 +1,102 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: volume-admission
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: volume-admission-psp
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: privileged-psp
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: volume-admission
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: volume-admission
+  namespace: volume-admission
+  labels:
+    name: volume-admission
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: volume-admission
+  template:
+    metadata:
+      name: volume-admission
+      labels:
+        name: volume-admission
+    spec:
+      containers:
+        - name: webhook
+          image: volume-admission:latest
+          imagePullPolicy: Never
+          env:
+            - name: "DEBUG"
+              value: "true"
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 300m
+            requests:
+              memory: 50Mi
+              cpu: 300m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: volume-admission-certs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: volume-admission
+  namespace: volume-admission
+  labels:
+    name: volume-admission
+spec:
+  ports:
+    - name: webhook
+      port: 443
+      targetPort: 8080
+  selector:
+    name: volume-admission
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: volume-admission
+webhooks:
+  - name: volume-admission.tools.wmcloud.org
+    clientConfig:
+      service:
+        name: volume-admission
+        namespace: volume-admission
+        path: "/"
+      caBundle: --CA_BUNDLE--
+    failurePolicy: Ignore
+    matchPolicy: Equivalent
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    objectSelector:
+      matchLabels:
+        toolforge: tool
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+---
