@@ -9,12 +9,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-type VolumeAdmission struct {}
-
 type PatchOperation struct {
 	Op    string      `json:"op"`
 	Path  string      `json:"path"`
 	Value interface{} `json:"value,omitempty"`
+}
+
+type Volume struct {
+	Name     string              `json:"name"`
+	Path     string              `json:"path"`
+	Type     corev1.HostPathType `json:"type"`
+	ReadOnly bool                `json:"readOnly"`
+}
+
+type VolumeAdmission struct {
+	Volumes []Volume
 }
 
 func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionReview) {
@@ -42,36 +51,36 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		UID: review.Request.UID,
 	}
 
-	hostPathFile := corev1.HostPathFile
-
 	var p []PatchOperation
 
-	patch := PatchOperation{
-		Op:    "add",
-		Path:  "/spec/volumes/-",
-		Value: &corev1.Volume{
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/wmcs-project",
-					Type: &hostPathFile,
-				},
-			},
-			Name: "wmcs-project",
-		},
-	}
-	p = append(p, patch)
-
-	for i := range pod.Spec.Containers {
+	for _, volume := range admission.Volumes {
 		patch := PatchOperation{
 			Op:    "add",
-			Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", i),
-			Value: &corev1.VolumeMount{
-				MountPath: "/etc/wmcs-project",
-				Name:      "wmcs-project",
-				ReadOnly:  true,
+			Path:  "/spec/volumes/-",
+			Value: &corev1.Volume{
+				VolumeSource: corev1.VolumeSource{
+					HostPath: &corev1.HostPathVolumeSource{
+						Path: volume.Path,
+						Type: &volume.Type,
+					},
+				},
+				Name: volume.Name,
 			},
 		}
 		p = append(p, patch)
+
+		for i := range pod.Spec.Containers {
+			patch := PatchOperation{
+				Op:    "add",
+				Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", i),
+				Value: &corev1.VolumeMount{
+					MountPath: volume.Path,
+					Name:      volume.Name,
+					ReadOnly:  volume.ReadOnly,
+				},
+			}
+			p = append(p, patch)
+		}
 	}
 
 	// parse the []map into JSON
