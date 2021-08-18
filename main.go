@@ -20,7 +20,7 @@ func main() {
 	config := &Config{}
 	err := envconfig.Process("", config)
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.Errorf("Could not load envconfig: %v", err)
 		return
 	}
 
@@ -28,16 +28,17 @@ func main() {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	logrus.Debugln("Reading volumes from json file")
+	logrus.Debugf("Reading volumes from json file %v", config.Volumes)
 	file, err := ioutil.ReadFile(config.Volumes)
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.Errorf("Could not load volume file: %v", err)
 		return
 	}
 
 	var volumes []server.Volume
 	err = json.Unmarshal(file, &volumes)
 	if err != nil {
+		logrus.Errorf("Could not unmarshal volume data: %v", err)
 		logrus.Errorln(err)
 		return
 	}
@@ -48,13 +49,14 @@ func main() {
 
 	s, err := server.GetAdmissionControllerServer(volumeAdmission, config.TLSCert, config.TLSKey, config.ListenOn)
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.Errorf("Could not create server instance: %v", err)
 		return
 	}
 
+	logrus.Infof("Starting web server on %v", config.ListenOn)
 	err = s.ListenAndServeTLS("", "")
 	if err != nil {
-		logrus.Errorln(err)
+		logrus.Errorf("Could not start web server: %v", err)
 		return
 	}
 }

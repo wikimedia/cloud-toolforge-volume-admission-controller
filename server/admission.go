@@ -30,9 +30,8 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	req := review.Request
 
 	var pod corev1.Pod
-	var err error
-
-	if err := json.Unmarshal(req.Object.Raw, &pod); err != nil {
+	err := json.Unmarshal(req.Object.Raw, &pod)
+	if err != nil {
 		logrus.Errorf("Could not unmarshal raw object: %v", err)
 		review.Response = &admissionv1.AdmissionResponse{
 			UID: review.Request.UID,
@@ -46,10 +45,6 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 
 	logrus.Debugf("AdmissionReview for Kind=%v, Namespace=%v Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
 		req.Kind, req.Namespace, req.Name, pod.Name, req.UID, req.Operation, req.UserInfo)
-
-	response := &admissionv1.AdmissionResponse{
-		UID: review.Request.UID,
-	}
 
 	var p []PatchOperation
 
@@ -83,6 +78,17 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		}
 	}
 
+	patchType := admissionv1.PatchTypeJSONPatch
+
+	response := &admissionv1.AdmissionResponse{
+		UID:       review.Request.UID,
+		PatchType: &patchType,
+		Allowed:   true,
+		Result:    &metav1.Status{
+			Message: "Volumes mounted",
+		},
+	}
+
 	// parse the []map into JSON
 	response.Patch, err = json.Marshal(p)
 	if err != nil {
@@ -95,14 +101,6 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		}
 
 		return
-	}
-
-	patchType := admissionv1.PatchTypeJSONPatch
-	response.PatchType = &patchType
-
-	response.Allowed = true
-	response.Result = &metav1.Status{
-		Message: "Volumes mounted",
 	}
 
 	review.Response = response
