@@ -7,6 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
+	"strings"
 )
 
 type PatchOperation struct {
@@ -46,6 +47,21 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	logrus.Debugf("AdmissionReview for Kind=%v, Namespace=%v Name=%v (%v) UID=%v patchOperation=%v UserInfo=%v",
 		req.Kind, req.Namespace, req.Name, pod.Name, req.UID, req.Operation, req.UserInfo)
 
+	if !strings.HasPrefix(req.Namespace, "tool-") {
+		logrus.Warningf("Skipping non-tool namespace %v", req.Namespace)
+
+		review.Response = &admissionv1.AdmissionResponse{
+			UID: review.Request.UID,
+			Result: &metav1.Status{
+				Message: "Only tools can have tool volumes mounted to them",
+			},
+		}
+
+		return
+	}
+
+	toolName := strings.Replace(req.Namespace, "tool-", "", 1)
+
 	var p []PatchOperation
 
 	for _, volume := range admission.Volumes {
@@ -76,6 +92,30 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 			}
 			p = append(p, patch)
 		}
+	}
+
+	for i := range pod.Spec.Containers {
+		// I have no clue why this is not required for volumes or volume mounts,
+		// but if there are no env vars set the array does not exist and if it's not
+		// set the add new array entry patch would fail. (Don't ask why I know.)
+		if pod.Spec.Containers[i].Env == nil {
+			patch := PatchOperation{
+				Op:    "add",
+				Path:  fmt.Sprintf("/spec/containers/%d/env", i),
+				Value: []corev1.EnvVar{},
+			}
+			p = append(p, patch)
+		}
+
+		patch := PatchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/containers/%d/env/-", i),
+			Value: &corev1.EnvVar{
+				Name:  "HOME",
+				Value: fmt.Sprintf("/data/project/%v", toolName),
+			},
+		}
+		p = append(p, patch)
 	}
 
 	patchType := admissionv1.PatchTypeJSONPatch
