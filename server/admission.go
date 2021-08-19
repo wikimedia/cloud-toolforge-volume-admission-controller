@@ -50,8 +50,8 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 
 	for _, volume := range admission.Volumes {
 		patch := PatchOperation{
-			Op:    "add",
-			Path:  "/spec/volumes/-",
+			Op:   "add",
+			Path: "/spec/volumes/-",
 			Value: &corev1.Volume{
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
@@ -66,8 +66,8 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 
 		for i := range pod.Spec.Containers {
 			patch := PatchOperation{
-				Op:    "add",
-				Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts/-", i),
+				Op:   "add",
+				Path: fmt.Sprintf("/spec/containers/%d/volumeMounts/-", i),
 				Value: &corev1.VolumeMount{
 					MountPath: volume.Path,
 					Name:      volume.Name,
@@ -84,7 +84,7 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		UID:       review.Request.UID,
 		PatchType: &patchType,
 		Allowed:   true,
-		Result:    &metav1.Status{
+		Result: &metav1.Status{
 			Message: "Volumes mounted",
 		},
 	}

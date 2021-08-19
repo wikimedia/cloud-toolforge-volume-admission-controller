@@ -48,12 +48,11 @@ func (acs *AdmissionControllerServer) ServeHTTP(w http.ResponseWriter, r *http.R
 	}
 }
 
-
 func GetAdmissionControllerServerNoSsl(ac AdmissionController, listenOn string) *http.Server {
 	return &http.Server{
 		Handler: &AdmissionControllerServer{
 			AdmissionController: ac,
-			Decoder: serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer(),
+			Decoder:             serializer.NewCodecFactory(runtime.NewScheme()).UniversalDeserializer(),
 		},
 		Addr: listenOn,
 	}

@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	ListenOn string   `default:"0.0.0.0:8080"`
-	TLSCert  string   `default:"/etc/webhook/certs/cert.pem"`
-	TLSKey   string   `default:"/etc/webhook/certs/key.pem"`
-	Volumes  string   `default:"/etc/volumes.json"`
-	Debug    bool     `default:"true"`
+	ListenOn string `default:"0.0.0.0:8080"`
+	TLSCert  string `default:"/etc/webhook/certs/cert.pem"`
+	TLSKey   string `default:"/etc/webhook/certs/key.pem"`
+	Volumes  string `default:"/etc/volumes.json"`
+	Debug    bool   `default:"true"`
 }
 
 func main() {
