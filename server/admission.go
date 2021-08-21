@@ -63,8 +63,8 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	// TODO: remove after PodPreset migration is done
 	if _, exists := pod.Annotations["podpreset.admission.kubernetes.io/podpreset-mount-toolforge-vols"]; exists {
 		review.Response = &admissionv1.AdmissionResponse{
-			UID:       review.Request.UID,
-			Allowed:   true,
+			UID:     review.Request.UID,
+			Allowed: true,
 			Result: &metav1.Status{
 				Message: "Volumes already mounted from a pod preset",
 			},
