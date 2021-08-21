@@ -60,8 +60,18 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		return
 	}
 
-	// TODO: if both this webhook and the legacy pod preset are operational at the same time,
-	// ensure this won't do any duplicate work!
+	// TODO: remove after PodPreset migration is done
+	if _, exists := pod.Annotations["podpreset.admission.kubernetes.io/podpreset-mount-toolforge-vols"]; exists {
+		review.Response = &admissionv1.AdmissionResponse{
+			UID:       review.Request.UID,
+			Allowed:   true,
+			Result: &metav1.Status{
+				Message: "Volumes already mounted from a pod preset",
+			},
+		}
+
+		return
+	}
 
 	toolName := strings.Replace(req.Namespace, "tool-", "", 1)
 
