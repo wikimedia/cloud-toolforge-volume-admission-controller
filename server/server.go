@@ -48,6 +48,8 @@ func (acs *AdmissionControllerServer) ServeHTTP(w http.ResponseWriter, r *http.R
 	}
 }
 
+// GetAdmissionControllerServerNoSsl creates a web server that serves
+// Kubernetes webhook requests
 func GetAdmissionControllerServerNoSsl(ac AdmissionController, listenOn string) *http.Server {
 	return &http.Server{
 		Handler: &AdmissionControllerServer{
@@ -58,6 +60,8 @@ func GetAdmissionControllerServerNoSsl(ac AdmissionController, listenOn string) 
 	}
 }
 
+// GetAdmissionControllerServer creates a web server that serves
+// Kubernetes webhook requests with TLS
 func GetAdmissionControllerServer(ac AdmissionController, tlsCert string, tlsKey string, listenOn string) (*http.Server, error) {
 	certificate, err := tls.LoadX509KeyPair(tlsCert, tlsKey)
 	if err != nil {

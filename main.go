@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
+// Config contains the general configuration of the webhook via env variables
 type Config struct {
 	ListenOn string `default:"0.0.0.0:8080"`
 	TLSCert  string `default:"/etc/webhook/certs/cert.pem"`

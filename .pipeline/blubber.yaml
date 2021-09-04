@@ -1,0 +1,24 @@
+version: v4
+
+variants:
+  build:
+    base: docker-registry.wikimedia.org/golang1.15:latest
+    apt:
+      packages: [golint]
+    builder:
+      requirements: [go.mod, go.sum]
+      command:
+        - sh
+        - -c
+        - >-
+          go mod download &&
+          go mod verify
+    copies: [local]
+    runs:
+      insecurely: true
+  lint:
+    includes: [build]
+    entrypoint: [golint, ./...]
+#    test:
+#      includes: [build]
+#      entrypoint: [go, test, ./...]

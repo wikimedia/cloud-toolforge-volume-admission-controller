@@ -10,12 +10,17 @@ import (
 	"strings"
 )
 
+// PatchOperation describes an operation done to modify a Kubernetes
+// resource
 type PatchOperation struct {
 	Op    string      `json:"op"`
 	Path  string      `json:"path"`
 	Value interface{} `json:"value,omitempty"`
 }
 
+
+// Volume contains details about one specific volume mounted to
+// Toolforge Kubernetes containers
 type Volume struct {
 	Name     string              `json:"name"`
 	Path     string              `json:"path"`
@@ -23,10 +28,13 @@ type Volume struct {
 	ReadOnly bool                `json:"readOnly"`
 }
 
+// VolumeAdmission type is what does all the magic
 type VolumeAdmission struct {
 	Volumes []Volume
 }
 
+// HandleAdmission has all the webhook logic to possibly mount volumes
+// to containers if needed
 func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionReview) {
 	req := review.Request
 
