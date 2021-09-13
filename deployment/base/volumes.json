@@ -1,0 +1,62 @@
+[
+  {
+    "name": "dumps",
+    "path": "/public/dumps",
+    "type": "Directory",
+    "readOnly": true
+  },
+  {
+    "name": "dumpsrc1",
+    "path": "/mnt/nfs/dumps-labstore1007.wikimedia.org",
+    "type": "Directory",
+    "readOnly": true
+  },
+  {
+    "name": "dumpsrc2",
+    "path": "/mnt/nfs/dumps-labstore1006.wikimedia.org",
+    "type": "Directory",
+    "readOnly": true
+  },
+  {
+    "name": "home",
+    "path": "/data/project",
+    "type": "Directory",
+    "readOnly": false
+  },
+  {
+    "name": "wmcs-project",
+    "path": "/etc/wmcs-project",
+    "type": "File",
+    "readOnly": true
+  },
+  {
+    "name": "scratch",
+    "path": "/data/scratch",
+    "type": "Directory",
+    "readOnly": false
+  },
+  {
+    "name": "etcldap-conf",
+    "path": "/etc/ldap.conf",
+    "type": "File",
+    "readOnly": true
+  },
+  {
+    "name": "etcldap-yaml",
+    "path": "/etc/ldap.yaml",
+    "type": "File",
+    "readOnly": true
+  },
+  {
+    "name": "etcnovaobserver-yaml",
+    "path": "/etc/novaobserver.yaml",
+    "type": "File",
+    "readOnly": true
+  },
+  {
+    "name": "sssd-pipes",
+    "path": "/var/lib/sss/pipes",
+    "type": "Directory",
+    "readOnly": false
+  }
+]

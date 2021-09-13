@@ -1,0 +1,12 @@
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - deployment.yaml
+  - service.yaml
+  - webhook.yaml
+configMapGenerator:
+  - name: volumes-config
+    files:
+      - volumes.json
+generatorOptions:
+  disableNameSuffixHash: true

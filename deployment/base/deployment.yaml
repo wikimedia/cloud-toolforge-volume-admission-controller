@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: volume-admission
+  namespace: volume-admission
+  labels:
+    name: volume-admission
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      name: volume-admission
+  template:
+    metadata:
+      name: volume-admission
+      labels:
+        name: volume-admission
+    spec:
+      containers:
+        - name: webhook
+          image: docker-registry.tools.wmflabs.org/volume-admission:latest
+          imagePullPolicy: Always
+          env:
+            - name: "DEBUG"
+              value: "false"
+          resources:
+            limits:
+              memory: 50Mi
+              cpu: 300m
+            requests:
+              memory: 50Mi
+              cpu: 300m
+          volumeMounts:
+            - name: webhook-certs
+              mountPath: /etc/webhook/certs
+              readOnly: true
+            - name: volumes-config
+              mountPath: /etc/volumes.json
+              subPath: volumes.json
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: webhook-certs
+          secret:
+            secretName: volume-admission-certs
+        - name: volumes-config
+          configMap:
+            name: volumes-config
+            items:
+              - key: volumes.json
+                path: volumes.json

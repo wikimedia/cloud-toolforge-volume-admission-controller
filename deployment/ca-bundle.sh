@@ -3,10 +3,15 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-# For Linux
 export CA_BUNDLE=$(kubectl get configmap -n kube-system extension-apiserver-authentication -o=jsonpath='{.data.client-ca-file}' | base64 |tr -d '\n')
-sed -i "s/caBundle: --CA_BUNDLE--/caBundle: ${CA_BUNDLE}/g" $(dirname $0)/deployment.yaml
 
-# For MacOS use the following
-# export CA_BUNDLE=$(kubectl get configmap -n kube-system extension-apiserver-authentication -o=jsonpath='{.data.client-ca-file}' | base64 )
-# sed -i "" "s/caBundle: --CA_BUNDLE--/caBundle: ${CA_BUNDLE}/g" $(dirname $0)/deployment.yaml
+cat > $(dirname $0)/deploys/local/webhook.yaml <<EOF
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: volume-admission
+webhooks:
+  - name: volume-admission.tools.wmcloud.org
+    clientConfig:
+      caBundle: ${CA_BUNDLE}
+EOF
