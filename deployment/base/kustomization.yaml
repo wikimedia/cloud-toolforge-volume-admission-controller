@@ -6,6 +6,7 @@ resources:
   - webhook.yaml
 configMapGenerator:
   - name: volumes-config
+    namespace: volume-admission
     files:
       - volumes.json
 generatorOptions:
