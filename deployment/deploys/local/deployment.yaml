@@ -6,8 +6,13 @@ metadata:
   labels:
     name: volume-admission
 spec:
+  replicas: 1
   template:
     spec:
       containers:
         - name: webhook
-          image: docker-registry.tools.wmflabs.org/volume-admission:testing
+          image: volume-admission:latest
+          imagePullPolicy: Never
+          env:
+            - name: "DEBUG"
+              value: "true"

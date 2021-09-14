@@ -86,6 +86,7 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	var p []PatchOperation
 
 	for _, volume := range admission.Volumes {
+		var volumeType = volume.Type
 		patch := PatchOperation{
 			Op:   "add",
 			Path: "/spec/volumes/-",
@@ -93,7 +94,7 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 				VolumeSource: corev1.VolumeSource{
 					HostPath: &corev1.HostPathVolumeSource{
 						Path: volume.Path,
-						Type: &volume.Type,
+						Type: &volumeType,
 					},
 				},
 				Name: volume.Name,

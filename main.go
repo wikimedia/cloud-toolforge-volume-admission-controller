@@ -44,6 +44,8 @@ func main() {
 		return
 	}
 
+	logrus.Infof("Loaded volumes successfully: %v", volumes)
+
 	volumeAdmission := &server.VolumeAdmission{
 		Volumes: volumes,
 	}
