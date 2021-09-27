@@ -18,7 +18,6 @@ type PatchOperation struct {
 	Value interface{} `json:"value,omitempty"`
 }
 
-
 // Volume contains details about one specific volume mounted to
 // Toolforge Kubernetes containers
 type Volume struct {
@@ -31,6 +30,26 @@ type Volume struct {
 // VolumeAdmission type is what does all the magic
 type VolumeAdmission struct {
 	Volumes []Volume
+}
+
+func hasMountByPath(container corev1.Container, path string) bool {
+	for _, mount := range container.VolumeMounts {
+		if mount.MountPath == path {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hasVolumeByName(pod corev1.Pod, name string) bool {
+	for _, volume := range pod.Spec.Volumes {
+		if volume.Name == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 // HandleAdmission has all the webhook logic to possibly mount volumes
@@ -86,6 +105,10 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	var p []PatchOperation
 
 	for _, volume := range admission.Volumes {
+		if hasVolumeByName(pod, volume.Name) {
+			continue
+		}
+
 		var volumeType = volume.Type
 		patch := PatchOperation{
 			Op:   "add",
@@ -102,7 +125,12 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		}
 		p = append(p, patch)
 
-		for i := range pod.Spec.Containers {
+		for i, container := range pod.Spec.Containers {
+			// Ignore pods that already have this volume mounted
+			if hasMountByPath(container, volume.Path) {
+				continue
+			}
+
 			patch := PatchOperation{
 				Op:   "add",
 				Path: fmt.Sprintf("/spec/containers/%d/volumeMounts/-", i),
@@ -116,17 +144,30 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		}
 	}
 
-	for i := range pod.Spec.Containers {
+	for i, container := range pod.Spec.Containers {
 		// I have no clue why this is not required for volumes or volume mounts,
 		// but if there are no env vars set the array does not exist and if it's not
 		// set the add new array entry patch would fail. (Don't ask why I know.)
-		if pod.Spec.Containers[i].Env == nil {
+		if container.Env == nil {
 			patch := PatchOperation{
 				Op:    "add",
 				Path:  fmt.Sprintf("/spec/containers/%d/env", i),
 				Value: []corev1.EnvVar{},
 			}
 			p = append(p, patch)
+		} else {
+			// If $HOME is already set, don't touch and break things
+			var homeDefined = false
+			for _, env := range container.Env {
+				if env.Name == "HOME" {
+					homeDefined = true
+					break
+				}
+			}
+
+			if homeDefined {
+				continue
+			}
 		}
 
 		patch := PatchOperation{
