@@ -19,6 +19,6 @@ variants:
   lint:
     includes: [build]
     entrypoint: [golint, ./...]
-#    test:
-#      includes: [build]
-#      entrypoint: [go, test, ./...]
+  test:
+    includes: [build]
+    entrypoint: [go, test, ./...]
