@@ -2,29 +2,30 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
-	admissionv1 "k8s.io/api/admission/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
+	admissionv1 "k8s.io/api/admission/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
 var (
 	volumes = []Volume{
 		{
-			Name: "home",
-			Path: "/data/project",
+			Name:     "home",
+			Path:     "/data/project",
 			ReadOnly: false,
 		},
 		{
-			Name: "etc-ldap",
-			Path: "/etc/ldap",
+			Name:     "etc-ldap",
+			Path:     "/etc/ldap",
 			ReadOnly: true,
 		},
 	}
@@ -110,7 +111,7 @@ func TestServerIgnoresNonToolPods(t *testing.T) {
 	}
 }
 
-func TestServerMountsAllVolumes(t *testing.T) {
+func TestServerMountsAllVolumesWhenNoneExist(t *testing.T) {
 	review, err := getResponse(admissionv1.AdmissionReview{
 		TypeMeta: v1.TypeMeta{
 			Kind: "AdmissionReview",
@@ -167,8 +168,86 @@ func TestServerMountsAllVolumes(t *testing.T) {
 		t.Error(err)
 	}
 
+	if len(p) != 8 {
+		t.Errorf("Patch length %d does not match expected value 8", len(p))
+	}
+}
+
+func TestServerMountsAllVolumesIfSomeExist(t *testing.T) {
+	review, err := getResponse(admissionv1.AdmissionReview{
+		TypeMeta: v1.TypeMeta{
+			Kind: "AdmissionReview",
+		},
+		Request: &admissionv1.AdmissionRequest{
+			UID: "e911857d-c318-11e8-bbad-025000000001",
+			Kind: v1.GroupVersionKind{
+				Group: "", Version: "v1", Kind: "pod",
+			},
+			Operation: "CREATE",
+			Namespace: "tool-test",
+			Object: runtime.RawExtension{
+				Raw: []byte(`{
+					"kind": "Pod",
+					"apiVersion": "v1",
+					"metadata": {
+						"name": "test-123123123",
+						"namespace": "tool-test",
+						"uid": "4b54be10-8d3c-11e9-8b7a-080027f5f85c",
+						"creationTimestamp": "2019-06-12T18:02:51Z"
+					},
+					"spec": {
+						"containers": [
+							{
+								"name": "test",
+								"image": "docker-registry.tools.wmflabs.org/toolforge-python39-web:latest",
+								"command": ["/usr/bin/webservice-runner"],
+								"args": ["python39"],
+								"volumeMounts": [
+									{
+										"mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+										"name": "default-token-abcde",
+										"readOnly": true
+									}
+								]
+							}
+						],
+						    "volumes": [
+							{
+								"name": "default-token-abcde",
+								"secret": {
+									"defaultMode": 420,
+									"secretName": "default-token-abcde"
+								}
+							}
+						]
+					}
+				}`),
+			},
+		},
+	})
+
+	t.Log(review.Response)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !review.Response.Allowed {
+		t.Error("Should allow tools")
+	}
+
+	if *review.Response.PatchType != admissionv1.PatchTypeJSONPatch {
+		t.Error("Wrong patch type found")
+	}
+
+	var p []PatchOperation
+	err = json.Unmarshal(review.Response.Patch, &p)
+	if err != nil {
+		t.Error(err)
+	}
+
 	if len(p) != 6 {
-		t.Error("Patch length does not match expected value")
+		t.Errorf("Patch length %d does not match expected value of 6", len(p))
 	}
 }
 

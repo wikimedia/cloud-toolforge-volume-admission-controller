@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/json"
-	"strings"
 )
 
 // PatchOperation describes an operation done to modify a Kubernetes
@@ -104,6 +105,30 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 
 	var p []PatchOperation
 
+	// If there are no volumes, json-patch will fail unless we add it with
+	// an op.
+	if len(pod.Spec.Volumes) == 0 {
+		patch := PatchOperation{
+			Op:    "add",
+			Path:  "/spec/volumes",
+			Value: []string{},
+		}
+		p = append(p, patch)
+	}
+
+	for i, container := range pod.Spec.Containers {
+		// If there are no volumesMounts, json-patch will fail
+		// unless we add it with an op.
+		if len(container.VolumeMounts) == 0 {
+			patch := PatchOperation{
+				Op:    "add",
+				Path:  fmt.Sprintf("/spec/containers/%d/volumeMounts", i),
+				Value: []string{},
+			}
+			p = append(p, patch)
+		}
+	}
+
 	for _, volume := range admission.Volumes {
 		if hasVolumeByName(pod, volume.Name) {
 			continue
@@ -145,9 +170,6 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	}
 
 	for i, container := range pod.Spec.Containers {
-		// I have no clue why this is not required for volumes or volume mounts,
-		// but if there are no env vars set the array does not exist and if it's not
-		// set the add new array entry patch would fail. (Don't ask why I know.)
 		if container.Env == nil {
 			patch := PatchOperation{
 				Op:    "add",
