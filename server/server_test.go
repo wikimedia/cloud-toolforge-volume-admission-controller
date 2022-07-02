@@ -134,6 +134,9 @@ func TestServerMountsAllVolumesWhenNoneExist(t *testing.T) {
 						"creationTimestamp": "2019-06-12T18:02:51Z"
 					},
 					"spec": {
+						"nodeSelector": {
+							"foo": "bar"
+						},
 						"containers": [
 							{
 								"name": "test",
@@ -168,8 +171,8 @@ func TestServerMountsAllVolumesWhenNoneExist(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(p) != 8 {
-		t.Errorf("Patch length %d does not match expected value 8", len(p))
+	if len(p) != 9 {
+		t.Errorf("Patch length %d does not match expected value 9", len(p))
 	}
 }
 
@@ -196,6 +199,10 @@ func TestServerMountsAllVolumesIfSomeExist(t *testing.T) {
 						"creationTimestamp": "2019-06-12T18:02:51Z"
 					},
 					"spec": {
+						"nodeSelector": {
+							"foo": "bar",
+							"kubernetes.wmcloud.org/nfs-mounted": "true"
+						},
 						"containers": [
 							{
 								"name": "test",
@@ -211,7 +218,7 @@ func TestServerMountsAllVolumesIfSomeExist(t *testing.T) {
 								]
 							}
 						],
-						    "volumes": [
+						"volumes": [
 							{
 								"name": "default-token-abcde",
 								"secret": {
@@ -329,7 +336,7 @@ func TestServerMountsNeededVolumes(t *testing.T) {
 		t.Error(err)
 	}
 
-	if len(p) != 2 {
-		t.Error("Patch length does not match expected value")
+	if len(p) != 4 {
+		t.Errorf("Patch length %d does not match expected value of 4", len(p))
 	}
 }
