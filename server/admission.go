@@ -88,19 +88,6 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 		return
 	}
 
-	// TODO: remove after PodPreset migration is done
-	if _, exists := pod.Annotations["podpreset.admission.kubernetes.io/podpreset-mount-toolforge-vols"]; exists {
-		review.Response = &admissionv1.AdmissionResponse{
-			UID:     review.Request.UID,
-			Allowed: true,
-			Result: &metav1.Status{
-				Message: "Volumes already mounted from a pod preset",
-			},
-		}
-
-		return
-	}
-
 	toolName := strings.Replace(req.Namespace, "tool-", "", 1)
 
 	var p []PatchOperation
@@ -200,6 +187,27 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 				Value: fmt.Sprintf("/data/project/%v", toolName),
 			},
 		}
+		p = append(p, patch)
+	}
+
+	if pod.Spec.NodeSelector == nil {
+		pod.Spec.NodeSelector = map[string]string{}
+		patch := PatchOperation{
+			Op:    "add",
+			Path:  "/spec/nodeSelector",
+			Value: map[string]string{},
+		}
+
+		p = append(p, patch)
+	}
+
+	if _, exists := pod.Spec.NodeSelector["kubernetes.wmcloud.org/nfs-mounted"]; !exists {
+		patch := PatchOperation{
+			Op:    "add",
+			Path:  "/spec/nodeSelector/kubernetes.wmcloud.org~1nfs-mounted",
+			Value: "true",
+		}
+
 		p = append(p, patch)
 	}
 

@@ -3,88 +3,6 @@ kind: Namespace
 metadata:
   name: tool-test
 ---
-kind: PodPreset
-apiVersion: settings.k8s.io/v1alpha1
-metadata:
-  namespace: tool-test
-  name: mount-toolforge-vols
-spec:
-  env:
-    - name: HOME
-      value: /data/project/test
-  selector:
-    matchLabels:
-      toolforge: tool
-  volumeMounts:
-    - mountPath: /public/dumps
-      name: dumps
-      readOnly: true
-    - mountPath: /mnt/nfs/dumps-labstore1007.wikimedia.org
-      name: dumpsrc1
-      readOnly: true
-    - mountPath: /mnt/nfs/dumps-labstore1006.wikimedia.org
-      name: dumpsrc2
-      readOnly: true
-    - mountPath: /data/project
-      name: home
-    - mountPath: /etc/wmcs-project
-      name: wmcs-project
-      readOnly: true
-    - mountPath: /data/scratch
-      name: scratch
-    - mountPath: /etc/ldap.conf
-      name: etcldap-conf
-      readOnly: true
-    - mountPath: /etc/ldap.yaml
-      name: etcldap-yaml
-      readOnly: true
-    - mountPath: /etc/novaobserver.yaml
-      name: etcnovaobserver-yaml
-      readOnly: true
-    - mountPath: /var/lib/sss/pipes
-      name: sssd-pipes
-  volumes:
-    - hostPath:
-        path: /public/dumps
-        type: Directory
-      name: dumps
-    - hostPath:
-        path: /mnt/nfs/dumps-labstore1007.wikimedia.org
-        type: Directory
-      name: dumpsrc1
-    - hostPath:
-        path: /mnt/nfs/dumps-labstore1006.wikimedia.org
-        type: Directory
-      name: dumpsrc2
-    - hostPath:
-        path: /data/project
-        type: Directory
-      name: home
-    - hostPath:
-        path: /etc/wmcs-project
-        type: File
-      name: wmcs-project
-    - hostPath:
-        path: /data/scratch
-        type: Directory
-      name: scratch
-    - hostPath:
-        path: /etc/ldap.conf
-        type: File
-      name: etcldap-conf
-    - hostPath:
-        path: /etc/ldap.yaml
-        type: File
-      name: etcldap-yaml
-    - hostPath:
-        path: /etc/novaobserver.yaml
-        type: File
-      name: etcnovaobserver-yaml
-    - hostPath:
-        path: /var/lib/sss/pipes
-        type: Directory
-      name: sssd-pipes
----
 apiVersion: v1
 kind: Pod
 metadata:
@@ -108,6 +26,8 @@ metadata:
   labels:
     toolforge: tool
 spec:
+  nodeSelector:
+    foo: bar
   automountServiceAccountToken: false
   containers:
     - command:
