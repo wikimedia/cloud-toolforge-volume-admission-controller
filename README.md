@@ -27,6 +27,12 @@ Then just apply the manifests:
 kubectl apply -k deployment/deploys/local
 ```
 
+You may as well just run the entry point script:
+
+```
+./deploy.sh
+```
+
 ### Updating
 
 To apply your new changes, repeat the build step and then run the
@@ -39,4 +45,3 @@ kubectl delete pod --all -n volume-admission
 ## Deploying on Toolforge
 
 See instructions on [Wikitech](https://wikitech.wikimedia.org/wiki/Portal:Toolforge/Admin/Kubernetes/Deploying#volume_admission).
-
