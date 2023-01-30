@@ -38,7 +38,7 @@ the Dockerfile won't work.
 and push image to the internal repo:
 
   with a checkout of the repo somewhere in the docker image builder host (in a home directory is probably great), run:
-  
+
   `root@tools-docker-imagebuilder-01:# ./deploy.sh -b <tools or toolsbeta>`
 
   The command above builds the image on the image builder host and pushes it to the internal docker registry.
