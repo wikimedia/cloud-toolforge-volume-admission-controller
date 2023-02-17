@@ -7,16 +7,15 @@ webhooks:
     clientConfig:
       service:
         name: volume-admission
-        namespace: volume-admission
+        namespace: {{ .Release.Namespace }}
         path: "/"
-      caBundle: --CA_BUNDLE--
-    failurePolicy: Ignore
+      caBundle: {{ .Values.webhook.caBundle }}
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
     matchPolicy: Equivalent
     sideEffects: None
     admissionReviewVersions: ["v1"]
     objectSelector:
-      matchLabels:
-        toolforge: tool
+      {{ .Values.webhook.objectSelector | toYaml | nindent 6 }}
     rules:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: [""]

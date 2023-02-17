@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: volume-admission
-  namespace: volume-admission
   labels:
     name: volume-admission
 spec:
@@ -15,21 +14,18 @@ spec:
       name: volume-admission
       labels:
         name: volume-admission
+      annotations:
+        # ensure the pod gets restarted when config changes
+        volume-admission.tools.wmcloud.org/config-checksum: {{ .Values.volumes | toJson | sha256sum }}
     spec:
       containers:
         - name: webhook
-          image: docker-registry.tools.wmflabs.org/volume-admission:latest
-          imagePullPolicy: Always
+          image: {{ .Values.image.name }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: "DEBUG"
-              value: "false"
-          resources:
-            limits:
-              memory: 50Mi
-              cpu: 300m
-            requests:
-              memory: 50Mi
-              cpu: 300m
+              value: "{{ .Values.debug }}"
+          resources: {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: webhook-certs
               mountPath: /etc/webhook/certs
@@ -43,7 +39,7 @@ spec:
       volumes:
         - name: webhook-certs
           secret:
-            secretName: volume-admission-certs
+            secretName: {{ .Values.webhook.secretName }}
         - name: volumes-config
           configMap:
             name: volumes-config

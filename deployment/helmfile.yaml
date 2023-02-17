@@ -1,0 +1,16 @@
+releases:
+  - name: volume-admission
+    chart: ./chart/
+
+    namespace: volume-admission
+    createNamespace: true
+
+    values:
+      - ./values/{{ .Environment.Name }}.yaml
+      - ./values/ca-bundle.yaml  # for the local ca bundle
+
+# Specify an environment for each project.
+environments:
+  tools: {}
+  toolsbeta: {}
+  local: {}
