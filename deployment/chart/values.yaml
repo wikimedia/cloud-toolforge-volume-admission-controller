@@ -3,7 +3,7 @@ replicas: 2
 image:
   name: docker-registry.tools.wmflabs.org/volume-admission
   tag: latest
-  pullPolicy: IfNotPresent  # TODO: T284311
+  pullPolicy: Fail
 
 resources:
   limits:
