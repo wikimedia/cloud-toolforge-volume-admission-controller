@@ -12,8 +12,8 @@ import (
 // Config contains the general configuration of the webhook via env variables
 type Config struct {
 	ListenOn string `default:"0.0.0.0:8080"`
-	TLSCert  string `default:"/etc/webhook/certs/cert.pem"`
-	TLSKey   string `default:"/etc/webhook/certs/key.pem"`
+	TLSCert  string `default:"/etc/webhook/certs/tls.crt"`
+	TLSKey   string `default:"/etc/webhook/certs/tls.key"`
 	Volumes  string `default:"/etc/volumes.json"`
 	Debug    bool   `default:"true"`
 }
