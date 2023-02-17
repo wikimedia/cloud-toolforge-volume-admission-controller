@@ -1,8 +1,6 @@
-FROM golang:1.15-buster as builder
+FROM docker-registry.wikimedia.org/golang1.19:latest as builder
 
-RUN apt-get update && apt-get install git && apt-get install ca-certificates
-
-WORKDIR /volume-admission-controller
+WORKDIR /src
 
 COPY go.mod .
 COPY go.sum .
@@ -11,10 +9,12 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -ldflags="-w -s" -o /go/bin/volume-admission-controller
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -buildvcs=false -a -installsuffix cgo -ldflags="-w -s" -o /tmp/volume-admission
 
 # Runtime image
 FROM scratch AS base
+
+# TODO: what are the ca certs needed for?
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/bin/volume-admission-controller /usr/bin/volume-admission-controller
-ENTRYPOINT ["/usr/bin/volume-admission-controller"]
+COPY --from=builder /tmp/volume-admission /bin/volume-admission
+ENTRYPOINT ["/bin/volume-admission"]

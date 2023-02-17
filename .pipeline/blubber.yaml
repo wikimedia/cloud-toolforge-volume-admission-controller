@@ -2,7 +2,7 @@ version: v4
 
 variants:
   build:
-    base: docker-registry.wikimedia.org/golang1.15:latest
+    base: docker-registry.wikimedia.org/golang1.19:latest
     apt:
       packages: [golint]
     builder:
