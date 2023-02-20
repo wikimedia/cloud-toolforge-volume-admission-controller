@@ -1,3 +1,2 @@
 image:
-  tag: latest
-  pullPolicy: Always
+  tag: 7fd13ac
