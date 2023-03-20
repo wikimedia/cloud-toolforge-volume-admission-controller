@@ -165,16 +165,27 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 			}
 			p = append(p, patch)
 		} else {
-			// If $HOME is already set, don't touch and break things
-			var homeDefined = false
+			var skipSettingHome = false
 			for _, env := range container.Env {
 				if env.Name == "HOME" {
-					homeDefined = true
+					// If $HOME is already set don't overwrite it
+					skipSettingHome = true
+					break
+				} else if env.Name == "NO_HOME" {
+					// If $NO_HOME is set, don't add any HOME, and remove any workingDir to let the image decide
+					skipSettingHome = true
+					if container.WorkingDir != "" {
+						patch := PatchOperation{
+							Op:   "remove",
+							Path: fmt.Sprintf("/spec/containers/%d/workingDir", i),
+						}
+						p = append(p, patch)
+					}
 					break
 				}
 			}
 
-			if homeDefined {
+			if skipSettingHome {
 				continue
 			}
 		}
