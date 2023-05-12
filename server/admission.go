@@ -53,6 +53,15 @@ func hasVolumeByName(pod corev1.Pod, name string) bool {
 	return false
 }
 
+func hasEnvVarSet(container *corev1.Container, envVar string) bool {
+	for _, env := range container.Env {
+		if env.Name == envVar {
+			return true
+		}
+	}
+	return false
+}
+
 // HandleAdmission has all the webhook logic to possibly mount volumes
 // to containers if needed
 func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionReview) {
@@ -157,6 +166,7 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 	}
 
 	for i, container := range pod.Spec.Containers {
+		// Initialize the env entry itself, otherwise further patches will fail
 		if container.Env == nil {
 			patch := PatchOperation{
 				Op:    "add",
@@ -164,41 +174,38 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 				Value: []corev1.EnvVar{},
 			}
 			p = append(p, patch)
-		} else {
-			var skipSettingHome = false
-			for _, env := range container.Env {
-				if env.Name == "HOME" {
-					// If $HOME is already set don't overwrite it
-					skipSettingHome = true
-					break
-				} else if env.Name == "NO_HOME" {
-					// If $NO_HOME is set, don't add any HOME, and remove any workingDir to let the image decide
-					skipSettingHome = true
-					if container.WorkingDir != "" {
-						patch := PatchOperation{
-							Op:   "remove",
-							Path: fmt.Sprintf("/spec/containers/%d/workingDir", i),
-						}
-						p = append(p, patch)
-					}
-					break
+		}
+
+		// If $HOME is already set don't overwrite it
+		skipSettingHome := false
+		if hasEnvVarSet(&container, "HOME") {
+			skipSettingHome = true
+		}
+
+		// If $NO_HOME is set, don't add any HOME, and remove any workingDir to let the image decide
+		if hasEnvVarSet(&container, "NO_HOME") {
+			skipSettingHome = true
+			if container.WorkingDir != "" {
+				patch := PatchOperation{
+					Op:   "remove",
+					Path: fmt.Sprintf("/spec/containers/%d/workingDir", i),
 				}
-			}
-
-			if skipSettingHome {
-				continue
+				p = append(p, patch)
 			}
 		}
 
-		patch := PatchOperation{
-			Op:   "add",
-			Path: fmt.Sprintf("/spec/containers/%d/env/-", i),
-			Value: &corev1.EnvVar{
-				Name:  "HOME",
-				Value: fmt.Sprintf("/data/project/%v", toolName),
-			},
+		if !skipSettingHome {
+			patch := PatchOperation{
+				Op:   "add",
+				Path: fmt.Sprintf("/spec/containers/%d/env/-", i),
+				Value: &corev1.EnvVar{
+					Name:  "HOME",
+					Value: fmt.Sprintf("/data/project/%v", toolName),
+				},
+			}
+			p = append(p, patch)
 		}
-		p = append(p, patch)
+
 	}
 
 	if pod.Spec.NodeSelector == nil {
