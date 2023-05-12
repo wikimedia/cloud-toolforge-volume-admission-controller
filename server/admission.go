@@ -206,6 +206,17 @@ func (admission *VolumeAdmission) HandleAdmission(review *admissionv1.AdmissionR
 			p = append(p, patch)
 		}
 
+		// Always add the TOOL_DATA_DIR env var
+		patch := PatchOperation{
+			Op:   "add",
+			Path: fmt.Sprintf("/spec/containers/%d/env/-", i),
+			Value: &corev1.EnvVar{
+				Name:  "TOOL_DATA_DIR",
+				Value: fmt.Sprintf("/data/project/%v", toolName),
+			},
+		}
+		p = append(p, patch)
+
 	}
 
 	if pod.Spec.NodeSelector == nil {

@@ -224,8 +224,8 @@ func TestServerMountsAllVolumesWhenNoneExist(t *testing.T) {
 
 	var p = assertAllowedAndGetPatch(review, err, t)
 
-	if len(p) != 9 {
-		t.Errorf("Patch length %d does not match expected value 9", len(p))
+	if len(p) != 10 {
+		t.Errorf("Patch length %d does not match expected value 10", len(p))
 	}
 }
 
@@ -251,8 +251,8 @@ func TestServerMountsAllVolumesIfSomeExist(t *testing.T) {
 
 	var p = assertAllowedAndGetPatch(review, err, t)
 
-	if len(p) != 7 {
-		t.Errorf("Patch length %d does not match expected value of 6, got patches:\n%s", len(p), p)
+	if len(p) != 8 {
+		t.Errorf("Patch length %d does not match expected value of 8, got patches:\n%s", len(p), p)
 	}
 }
 
@@ -270,8 +270,8 @@ func TestServerMountsNeededVolumes(t *testing.T) {
 
 	var p = assertAllowedAndGetPatch(review, err, t)
 
-	if len(p) != 4 {
-		t.Errorf("Patch length %d does not match expected value of 4", len(p))
+	if len(p) != 5 {
+		t.Errorf("Patch length %d does not match expected value of 5", len(p))
 	}
 }
 
